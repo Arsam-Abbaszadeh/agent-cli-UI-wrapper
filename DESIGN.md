@@ -4,10 +4,11 @@
 
 Build a thin, cross-platform (macOS + Windows) desktop app that wraps **GitHub Copilot CLI**, adding:
 
-1. **Dictation** (voice-to-text) — both local (whisper.cpp) and external API options
-2. **Session management** — start new and resume existing Copilot CLI sessions
-3. **Streaming terminal output** rendered in a styled app UI
-4. **Model picker** — UI dropdown that maps to the `/model` slash command
+1. **Dual-view** — toggle between raw terminal (xterm.js) and styled HTML chat view
+2. **Dictation** (voice-to-text) — both local (whisper.cpp) and external API options
+3. **Session management** — start new and resume existing Copilot CLI sessions
+4. **Streaming terminal output** rendered in a styled app UI
+5. **Model picker** — UI dropdown that maps to the `/model` slash command
 5. **Conversation forking** — branch off an existing session (future)
 
 The app is intentionally minimal — it does **not** replace Copilot CLI, it wraps it with a UI layer.
