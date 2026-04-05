@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useTerminal } from '@/composables/useTerminal'
 import { useAppStore } from '@/stores/app'
 import '@xterm/xterm/css/xterm.css'
@@ -12,13 +12,26 @@ const store = useAppStore()
 const containerRef = ref<HTMLElement | null>(null)
 const { attachSession, detachSession, focus, fit } = useTerminal(containerRef)
 
-// Attach when session changes
+let cleanupExit: (() => void) | null = null
+
+function wireSession(id: string): void {
+  attachSession(id)
+  cleanupExit = window.api.pty.onExit(id, () => {
+    store.markSessionExited(id)
+  })
+}
+
+function unwireSession(): void {
+  detachSession()
+  cleanupExit?.()
+  cleanupExit = null
+}
+
 watch(() => props.sessionId, (newId, oldId) => {
-  if (oldId) detachSession()
-  if (newId) attachSession(newId)
+  if (oldId) unwireSession()
+  if (newId) wireSession(newId)
 }, { immediate: true })
 
-// Handle global keyboard for input mode switching
 function handleKeydown(e: KeyboardEvent): void {
   if (e.key === 'Escape') {
     if (store.inputMode === 'input') {
@@ -32,10 +45,12 @@ function handleKeydown(e: KeyboardEvent): void {
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown)
-  // Attach session after terminal is mounted
-  if (props.sessionId) {
-    attachSession(props.sessionId)
-  }
+  if (props.sessionId) wireSession(props.sessionId)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeydown)
+  unwireSession()
 })
 </script>
 

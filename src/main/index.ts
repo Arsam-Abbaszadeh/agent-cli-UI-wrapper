@@ -2,11 +2,13 @@ import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'path'
 import { PtyManager } from './pty-manager'
 import { SessionManager } from './session-manager'
+import { DictationManager } from './dictation'
 import { registerIpcHandlers } from './ipc-handlers'
 
 let mainWindow: BrowserWindow | null = null
 let ptyManager: PtyManager
 let sessionManager: SessionManager
+let dictationManager: DictationManager
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -40,9 +42,10 @@ function createWindow(): void {
   // Initialize managers
   ptyManager = new PtyManager(mainWindow)
   sessionManager = new SessionManager()
+  dictationManager = new DictationManager(mainWindow)
 
   // Register IPC handlers
-  registerIpcHandlers(ptyManager, sessionManager)
+  registerIpcHandlers(ptyManager, sessionManager, dictationManager)
 
   // Load the renderer
   if (process.env.ELECTRON_RENDERER_URL) {

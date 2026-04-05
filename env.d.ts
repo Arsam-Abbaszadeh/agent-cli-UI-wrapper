@@ -45,6 +45,8 @@ interface ElectronApi {
     start: () => Promise<void>
     stop: () => void
     onResult: (cb: (result: DictationResult) => void) => () => void
+    onStatus: (cb: (status: string) => void) => () => void
+    onError: (cb: (error: string) => void) => () => void
     listProviders: () => Promise<DictationProviderInfo[]>
     setProvider: (name: string) => Promise<void>
   }

@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { ref, nextTick, computed } from 'vue'
 import { useAppStore } from '@/stores/app'
+import { useDictation } from '@/composables/useDictation'
 import ModelPicker from './ModelPicker.vue'
+import DictationButton from './DictationButton.vue'
 
 const store = useAppStore()
+const { interimText } = useDictation()
 const inputText = ref('')
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
 
@@ -60,6 +63,14 @@ watch(() => store.inputMode, (mode) => {
     nextTick(() => textareaRef.value?.focus())
   }
 })
+
+// When dictation produces a final result, insert it into the input
+window.api.dictation.onResult((result) => {
+  if (result.isFinal && result.text) {
+    inputText.value += (inputText.value ? ' ' : '') + result.text
+    nextTick(() => autoResize())
+  }
+})
 </script>
 
 <template>
@@ -73,9 +84,9 @@ watch(() => store.inputMode, (mode) => {
         ref="textareaRef"
         v-model="inputText"
         class="input-field"
-        :placeholder="store.activeSession?.status === 'running'
+        :placeholder="interimText || (store.activeSession?.status === 'running'
           ? 'Send a message to Copilot CLI...'
-          : 'Session ended'"
+          : 'Session ended')"
         :disabled="store.activeSession?.status !== 'running'"
         rows="1"
         @keydown="handleKeydown"
@@ -84,6 +95,7 @@ watch(() => store.inputMode, (mode) => {
     </div>
 
     <div class="input-controls-right">
+      <DictationButton />
       <button
         class="send-btn"
         :disabled="!canSend"

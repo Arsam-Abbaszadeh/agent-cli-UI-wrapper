@@ -45,6 +45,16 @@ contextBridge.exposeInMainWorld('api', {
       ipcRenderer.on('dictation:result', handler)
       return () => ipcRenderer.removeListener('dictation:result', handler)
     },
+    onStatus: (cb: (status: string) => void) => {
+      const handler = (_e: Electron.IpcRendererEvent, status: string) => cb(status)
+      ipcRenderer.on('dictation:status', handler)
+      return () => ipcRenderer.removeListener('dictation:status', handler)
+    },
+    onError: (cb: (error: string) => void) => {
+      const handler = (_e: Electron.IpcRendererEvent, error: string) => cb(error)
+      ipcRenderer.on('dictation:error', handler)
+      return () => ipcRenderer.removeListener('dictation:error', handler)
+    },
     listProviders: () => ipcRenderer.invoke('dictation:providers'),
     setProvider: (name: string) => ipcRenderer.invoke('dictation:setProvider', name)
   },

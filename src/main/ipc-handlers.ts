@@ -2,10 +2,12 @@ import { ipcMain } from 'electron'
 import * as os from 'os'
 import { PtyManager } from './pty-manager'
 import { SessionManager } from './session-manager'
+import { DictationManager } from './dictation'
 
 export function registerIpcHandlers(
   ptyManager: PtyManager,
-  sessionManager: SessionManager
+  sessionManager: SessionManager,
+  dictationManager: DictationManager
 ): void {
   // --- PTY ---
   ipcMain.handle('pty:spawn', (_e, cwd: string, args?: string[]) => {
@@ -46,4 +48,15 @@ export function registerIpcHandlers(
   ipcMain.handle('app:getCwd', () => {
     return process.cwd() || os.homedir()
   })
+
+  // --- Dictation ---
+  ipcMain.handle('dictation:start', () => dictationManager.start())
+
+  ipcMain.on('dictation:stop', () => dictationManager.stop())
+
+  ipcMain.handle('dictation:providers', () => dictationManager.listProviders())
+
+  ipcMain.handle('dictation:setProvider', (_e, name: string) =>
+    dictationManager.setActiveProvider(name)
+  )
 }
