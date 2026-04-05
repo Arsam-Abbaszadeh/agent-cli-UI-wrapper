@@ -1,19 +1,44 @@
 <script setup lang="ts">
+import { provide, watch } from 'vue'
 import { useAppStore } from '@/stores/app'
 import { useSession } from '@/composables/useSession'
+import { useOutputBuffer } from '@/composables/useOutputBuffer'
 import Sidebar from '@/components/Sidebar.vue'
 import TerminalView from '@/components/TerminalView.vue'
+import AppView from '@/components/AppView.vue'
 import InputBar from '@/components/InputBar.vue'
+import ViewToggle from '@/components/ViewToggle.vue'
 
 const store = useAppStore()
 const { createNewSession } = useSession()
+const outputBuffer = useOutputBuffer()
+
+// Provide output buffer so InputBar can track sent messages
+provide('outputBuffer', outputBuffer)
+
+// Wire PTY data to the output buffer when active session changes
+let cleanupBuffer: (() => void) | null = null
+
+watch(() => store.activeSession?.ptyId, (newId, oldId) => {
+  cleanupBuffer?.()
+  cleanupBuffer = null
+  outputBuffer.clear()
+
+  if (newId) {
+    cleanupBuffer = window.api.pty.onData(newId, (data) => {
+      outputBuffer.appendData(data)
+    })
+  }
+}, { immediate: true })
 </script>
 
 <template>
   <div class="app-layout">
-    <!-- Titlebar drag region (macOS traffic lights) -->
     <div class="titlebar titlebar-drag">
       <span class="titlebar-title">Agent CLI</span>
+      <div class="titlebar-controls titlebar-no-drag" v-if="store.activeSession">
+        <ViewToggle />
+      </div>
     </div>
 
     <div class="app-body">
@@ -21,8 +46,15 @@ const { createNewSession } = useSession()
 
       <div class="main-panel">
         <template v-if="store.activeSession">
+          <!-- Both views mounted, one hidden — xterm.js keeps state -->
           <TerminalView
+            v-show="store.viewMode === 'terminal'"
             :session-id="store.activeSession.ptyId"
+            class="terminal-area"
+          />
+          <AppView
+            v-show="store.viewMode === 'app'"
+            :blocks="outputBuffer.blocks.value"
             class="terminal-area"
           />
           <InputBar />
@@ -39,7 +71,6 @@ const { createNewSession } = useSession()
       </div>
     </div>
 
-    <!-- Status bar -->
     <div class="status-bar">
       <span class="status-item" v-if="store.activeSession">
         {{ store.activeSession.status === 'running' ? '●' : '○' }}
@@ -69,11 +100,19 @@ const { createNewSession } = useSession()
   background: var(--bg-sidebar);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
+  position: relative;
 
   &-title {
     font-size: 13px;
     color: var(--text-secondary);
     font-weight: 500;
+  }
+
+  &-controls {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
   }
 }
 

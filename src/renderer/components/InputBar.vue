@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, nextTick, computed } from 'vue'
+import { ref, nextTick, computed, inject } from 'vue'
 import { useAppStore } from '@/stores/app'
 import { useDictation } from '@/composables/useDictation'
 import ModelPicker from './ModelPicker.vue'
@@ -7,6 +7,7 @@ import DictationButton from './DictationButton.vue'
 
 const store = useAppStore()
 const { interimText } = useDictation()
+const outputBuffer = inject<any>('outputBuffer')
 const inputText = ref('')
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
 
@@ -23,7 +24,9 @@ function sendMessage(): void {
   const text = inputText.value
   inputText.value = ''
 
-  // Write to PTY stdin (the text + newline, like pressing Enter in a terminal)
+  // Track for block parser user-message detection
+  outputBuffer?.trackSentMessage(text.trim())
+
   window.api.pty.write(session.ptyId, text + '\n')
 
   // Reset textarea height

@@ -16,6 +16,7 @@ export const useAppStore = defineStore('app', () => {
   const activeSessionId = ref<string | null>(null)
   const selectedModel = ref<string>('claude-sonnet-4')
   const inputMode = ref<'input' | 'terminal'>('input')
+  const viewMode = ref<'terminal' | 'app'>('terminal')
 
   const activeSession = computed(() =>
     sessions.value.find(s => s.ptyId === activeSessionId.value) ?? null
@@ -54,18 +55,24 @@ export const useAppStore = defineStore('app', () => {
     inputMode.value = mode
   }
 
+  function setViewMode(mode: 'terminal' | 'app'): void {
+    viewMode.value = mode
+  }
+
   return {
     sessions,
     activeSessionId,
     activeSession,
     selectedModel,
     inputMode,
+    viewMode,
     addSession,
     removeSession,
     setActiveSession,
     markSessionExited,
     setModel,
     toggleInputMode,
-    setInputMode
+    setInputMode,
+    setViewMode
   }
 })
